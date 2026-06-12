@@ -8,21 +8,14 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Ruta de prueba
 app.get('/', (req, res) => {
   res.send('Servidor funcionando correctamente');
 });
 
-// Conexión a MongoDB
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log('✅ Conexión exitosa a MongoDB Atlas');
-  })
-  .catch((err) => {
-    console.error('❌ Error de conexión a MongoDB:', err);
-  });
+  .then(() => console.log('Conexión exitosa a MongoDB Atlas'))
+  .catch((err) => console.error('Error de conexión a MongoDB:', err));
 
-// Esquema
 const ProductoSchema = new mongoose.Schema({
   nombre: String,
   precio: Number,
@@ -31,7 +24,6 @@ const ProductoSchema = new mongoose.Schema({
 
 const Producto = mongoose.model('Producto', ProductoSchema);
 
-// Obtener productos
 app.get('/productos', async (req, res) => {
   try {
     const productos = await Producto.find();
@@ -41,24 +33,40 @@ app.get('/productos', async (req, res) => {
   }
 });
 
-// Registrar producto
 app.post('/productos', async (req, res) => {
   try {
     const nuevoProducto = new Producto(req.body);
     await nuevoProducto.save();
-
-    res.json({
-      mensaje: 'Producto registrado',
-      nuevoProducto
-    });
+    res.json({ mensaje: 'Producto registrado', nuevoProducto });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// Puerto para Render
+app.put('/productos/:id', async (req, res) => {
+  try {
+    const productoActualizado = await Producto.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+    res.json({ mensaje: 'Producto actualizado', productoActualizado });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/productos/:id', async (req, res) => {
+  try {
+    await Producto.findByIdAndDelete(req.params.id);
+    res.json({ mensaje: 'Producto eliminado' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Servidor activo en puerto ${PORT}`);
+  console.log(`Servidor activo en puerto ${PORT}`);
 });
